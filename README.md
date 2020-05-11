@@ -22,6 +22,8 @@ Given the [GPIO port](https://www.raspberrypi.org/documentation/usage/gpio/):
 
 It's also worth adding on an antenna to the board - 170mm of wire should be about a quarter-wavelength.
 
+![Transmitter with pins highlighted](docs/transmitter.jpg)
+
 ## Prerequisies
 
 * [Rasbpian](https://www.raspberrypi.org/downloads/) 10.3 (in this case, shouldn't be particularly tied to it)
