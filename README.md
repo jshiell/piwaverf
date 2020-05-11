@@ -83,7 +83,12 @@ You can finally start the listener for UDP messages:
 pywaverf/main.py listen
 ```
 
-You can then send test messages with the [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
+You can then send test messages with the [LightwaveRF Gem](https://github.com/pauly/lightwaverf), or via `netcat`:
+
+```bash
+echo '666,!R1D5F1|ignored|ignored' | nc -w 1 -u <address-of-listening-host> 9760 # turn room 1 device 5 on
+echo '666,!R1D5F0|ignored|ignored' | nc -w 1 -u <address-of-listening-host> 9760 # turn room 1 device 5 off
+```
 
 ## References
 
