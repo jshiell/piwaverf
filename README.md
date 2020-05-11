@@ -54,7 +54,9 @@ room:
   - name: Lights
 ```
 
-The IDs of the rooms and devices will be determined by the `id` attribute (only the numeric part will be used), or the index within the list if no `id` is present. e.g. `A Room`/`Telly Lights` would be `room_id=0` and `device_id=7`. `Another Room`/`Lights` would be `room_id=1` and `device_id=0`.
+The IDs of the rooms and devices will be determined by the `id` attribute (only the numeric part will be used), or the index within the list if no `id` is present. e.g. `A Room`/`Telly Lights` would be `room_id=1` and `device_id=7`. `Another Room`/`Lights` would be `room_id=2` and `device_id=1`.
+
+You can have up to 8 rooms, and up to 15 devices per room. The protocol allows for more rooms, but I believe this matches the limits imposed by the app.
 
 ```bash
 pip install -r requirements.txt
