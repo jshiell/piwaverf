@@ -37,14 +37,33 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
 
 ## Usage
 
-This is at a very early stage at present. However, you can use it to pair and turn a light on/off.
+The UDP protocol isn't yet supported.
+
+You'll need to set up your device mappings. This maps from the names used by the UDP protocol to the IDs used by the radio protocol. Do do this we use a YAML file in a subset of the format used by Paul Clarke's popular [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
+
+```yaml
+room:
+- name: A Room
+  device:
+  - name: Telly Lights
+    id: D7
+  - name: Door Lights
+    id: D2
+- name: Another Room
+  device:
+  - name: Lights
+```
+
+The IDs of the rooms and devices will be determined by the `id` attribute (only the numeric part will be used), or the index within the list if no `id` is present. e.g. `A Room`/`Telly Lights` would be `room_id=0` and `device_id=7`. `Another Room`/`Lights` would be `room_id=1` and `device_id=0`.
 
 ```bash
+pip install -r requirements.txt
+
 pywaverf/main.py --help # show usage info
 
-pywaverf/main.py pair --room 1 --unit 3 # pair a unit - make sure the unit is in pairing mode first
+pywaverf/main.py pair --room 'A Room' --device 'Door Lights' # pair a device - make sure the unit is in pairing mode first, or this will have no effect
 
-pywaverf/main.py on --room 1 --unit 3 # turn a paired unit on
+pywaverf/main.py on --room 'Another Room' --device 'Lights' # turn a paired unit on
 ```
 
 ## References

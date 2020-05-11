@@ -1,1 +1,2 @@
 pigpio==1.46
+pyyaml==5.3.1

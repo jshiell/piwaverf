@@ -1,5 +1,7 @@
 import pigpio
 import time
+import yaml
+from dataclasses import dataclass
 
 import lwrf
 
@@ -7,6 +9,47 @@ import lwrf
 class LightCommand:
   On = 1
   Off = 0
+
+
+@dataclass
+class Device:
+  room_id: int
+  device_id: int
+
+
+class DeviceMappings:
+  """Read device mappings from a LightwaveRF Gem (https://github.com/pauly/lightwaverf) 
+     compatible file."""
+
+
+  def __init__(self, filename):
+    with open(filename, 'r') as fh:
+      self._config = yaml.safe_load(fh)
+
+  
+  def device_id(self, room_name, device_name):
+    room_index = 0
+    for room in self._config['room']:
+      if room.get('name').lower() == room_name.lower():
+        room_id = room.get('id') or room_index
+        device_index = 0
+
+        for device in room['device']:
+          if device.get('name').lower() == device_name.lower():
+            return Device(room_id, self._device_int(device.get('id')) or device_index)
+
+          device_index += 1
+
+      room_index += 1
+    
+    return None
+
+
+  def _device_int(self, string_value):
+    if string_value is not None:
+      return [int(s) for s in string_value if s.isdigit()][0]
+    else:
+      return None
 
 
 class Controller:
