@@ -40,4 +40,4 @@ This is at a very early stage at present. However, you can use `piwaverf.py` to 
 ## References
 
 * [433Mhz protocol](https://github.com/roberttidey/LightwaveRF/blob/master/LightwaveRF433.pdf)
-* [UDP hub protocol](https://github.com/openremote/Documentation/wiki/LightwaveRF)5
+* [UDP hub protocol](https://github.com/openremote/Documentation/wiki/LightwaveRF)
