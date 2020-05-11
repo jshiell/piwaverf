@@ -39,7 +39,7 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
 
 The UDP protocol isn't yet supported.
 
-You'll need to set up your device mappings. This maps from the names used by the UDP protocol to the IDs used by the radio protocol. Do do this we use a YAML file in a subset of the format used by Paul Clarke's popular [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
+You'll need to set up your device mappings. This maps from the names used by the UDP protocol to the IDs used by the radio protocol. To do this we use a YAML file in a subset of the format used by Paul Clarke's popular [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
 
 ```yaml
 room:
@@ -61,7 +61,8 @@ pip install -r requirements.txt
 
 pywaverf/main.py --help # show usage info
 
-pywaverf/main.py pair --room 'A Room' --device 'Door Lights' # pair a device - make sure the unit is in pairing mode first, or this will have no effect
+# pair a device - make sure the unit is in pairing mode first, or this will have no effect
+pywaverf/main.py pair --room 'A Room' --device 'Door Lights'
 
 pywaverf/main.py on --room 'Another Room' --device 'Lights' # turn a paired unit on
 ```
