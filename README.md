@@ -37,7 +37,7 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
 
 ## Usage
 
-This is at a very early stage at present. However, you can use `piwaverf.py` to pair and turn a light on/off. With the current code, place the switch into pairing mode (hold both buttons until it begines to flash) and then run `piwaverf.py`. It will pair the light to the hard-coded transmitter and unit ID. Running it a second time will turn the light on. Change `COMMAND` to `0` and run again to turn it off.
+This is at a very early stage at present. However, you can use it to pair and turn a light on/off. With the current code, place the switch into pairing mode (hold both buttons until it begines to flash) and then run `main.py`. It will pair the light to the hard-coded transmitter and unit ID. Running it after pairing will result in the light turning on, and then turning off 10 seconds later.
 
 ## References
 
