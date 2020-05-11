@@ -37,9 +37,9 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
 
 ## Usage
 
-The UDP protocol isn't yet supported.
+Only basic functions are supported at present (lights on/off).
 
-You'll need to set up your device mappings. This maps from the names used by the UDP protocol to the IDs used by the radio protocol. To do this we use a YAML file in a subset of the format used by Paul Clarke's popular [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
+Firstly, you'll need to set up your device mappings. This maps from the names used by the UDP protocol to the IDs used by the radio protocol. To do this we use a YAML file in a subset of the format used by Paul Clarke's popular [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
 
 ```yaml
 room:
@@ -62,12 +62,28 @@ You can have up to 8 rooms, and up to 15 devices per room. The protocol allows f
 pip install -r requirements.txt
 
 pywaverf/main.py --help # show usage info
-
-# pair a device - make sure the unit is in pairing mode first, or this will have no effect
-pywaverf/main.py pair --room 'A Room' --device 'Door Lights'
-
-pywaverf/main.py on --room 'Another Room' --device 'Lights' # turn a paired unit on
 ```
+
+You'll need to ensure your devices are paired, or they'll ignore the messages from the hub. Make sure the device is in pairing mode before doing so, or the message will have no effect.
+
+```bash
+pywaverf/main.py pair --room 'A Room' --device 'Door Lights'
+```
+
+Once paired, you can test by sending messages directly:
+
+```bash
+pywaverf/main.py on --room 'Another Room' --device 'Lights' # turn a paired unit on
+pywaverf/main.py off --room 'Another Room' --device 'Lights' # and off again
+```
+
+You can finally start the listener for UDP messages:
+
+```bash
+pywaverf/main.py listen
+```
+
+You can then send test messages with the [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
 
 ## References
 
