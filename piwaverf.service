@@ -1,0 +1,12 @@
+[Unit]
+Description=Handler for LightwaveRF Hub messages
+After=network.target pigpiod.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/piwaverf
+ExecStart=python3 /usr/local/piwaverf/main.py listen
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
