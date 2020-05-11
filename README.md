@@ -37,7 +37,15 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
 
 ## Usage
 
-This is at a very early stage at present. However, you can use it to pair and turn a light on/off. With the current code, place the switch into pairing mode (hold both buttons until it begines to flash) and then run `main.py`. It will pair the light to the hard-coded transmitter and unit ID. Running it after pairing will result in the light turning on, and then turning off 10 seconds later.
+This is at a very early stage at present. However, you can use it to pair and turn a light on/off.
+
+```bash
+pywaverf/main.py --help # show usage info
+
+pywaverf/main.py pair --room 1 --unit 3 # pair a unit - make sure the unit is in pairing mode first
+
+pywaverf/main.py on --room 1 --unit 3 # turn a paired unit on
+```
 
 ## References
 
