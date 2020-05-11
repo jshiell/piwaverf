@@ -18,7 +18,7 @@ Given the [GPIO port](https://www.raspberrypi.org/documentation/usage/gpio/):
 
 * Data to pin 12 (GPIO18)
 * 5V to pin 1 (5V)
-* Ground to ping 3 (Ground)
+* Ground to pin 3 (Ground)
 
 It's also worth adding on an antenna to the board - 170mm of wire should be about a quarter-wavelength.
 
