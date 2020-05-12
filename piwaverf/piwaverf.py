@@ -117,31 +117,38 @@ class Hub:
     def _handle_message(self, data):
       message = data.decode('utf-8')
 
-      transaction_id = 0
-      transaction_id_offset = 0
-      command_offset = 1
+      transaction_id = ''
+      message_offset = 0
 
-      if message[0] == ':': # MAC prefix, ignore at present
-        transaction_id_offset += 8
-        command_offset += 8
+      if message[message_offset] == ':': # MAC prefix, ignore at present
+        while message[message_offset] != ',':
+          message_offset += 1
+        message_offset += 1
 
-      if message[transaction_id_offset] != ',': # A TX ID is present
-        transaction_id = int(message[transaction_id_offset:transaction_id_offset + 3])
-        command_offset += 4
+      while message[message_offset] != ',':
+        transaction_id += message[message_offset]
+        message_offset += 1
+      if len(transaction_id) == 0:
+        transaction_id = '0'
 
-      if message[command_offset] == 'F':
+      if message[message_offset] != ',' and message[message_offset + 1] != '!':
+        print(f'Malformed message: {message}')
+        return Response(transaction_id, ResponseStatus.ERROR, 1, 'Malformed message')
+      message_offset += 2
+
+      if message[message_offset] == 'F':
         print(f'Pairing command, ignoring {message}')
         return Response(transaction_id, ResponseStatus.OK)
 
-      if message[command_offset + 1] == 'R' and message[command_offset + 3] == 'D' and message[command_offset + 5] == 'F':
-        room_number = int(message[command_offset + 2])
-        device_number = int(message[command_offset + 4])
+      if message[message_offset] == 'R' and message[message_offset + 2] == 'D' and message[message_offset + 4] == 'F':
+        room_number = int(message[message_offset + 1])
+        device_number = int(message[message_offset + 3])
 
         function = ''
-        function_offset = command_offset + 6
-        while function_offset < len(message) and message[function_offset] != '|':
-          function += message[function_offset]
-          function_offset += 1
+        message_offset += 5
+        while message_offset < len(message) and message[message_offset] != '|':
+          function += message[message_offset]
+          message_offset += 1
 
         command = self._parse_command(function)
         if command is not None:
@@ -200,11 +207,13 @@ class Controller:
     radio_command_argument = 0
 
     if command == LightCommand.Dim:
-      radio_command = 0
-      radio_command_argument = 127 + command_argument
+      if command_argument == 0:
+        radio_command = 0
+      else:
+        radio_command = 1
+        radio_command_argument = 127 + command_argument
 
     message = self._build_message(udp_room_id - 1, udp_device_number - 1, radio_command, radio_command_argument)
-    print(f'Sending {message}')
     self._tx.put(message, self._tx_repeat)
   
 
@@ -212,7 +221,7 @@ class Controller:
     arg1 = (argument & 0xF0) >> 4
     arg2 = argument & 0xF
 
-    message = [arg2, arg1, unit_number, command]
+    message = [arg1, arg2, unit_number, command]
 
     for element in self._transmitter_id:
       message.append(int(element, base=16))
