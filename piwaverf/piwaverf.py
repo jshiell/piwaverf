@@ -2,7 +2,7 @@ import pigpio
 import time
 import yaml
 import socket
-import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
@@ -10,8 +10,8 @@ import lwrf
 
 
 class LightCommand:
-  On = 1
   Off = 0
+  On = 1
   Dim = 2
 
 
@@ -30,6 +30,10 @@ class ResponseStatus:
 class Response:
   transaction_id: int
   status: str
+  room_number: int = 1
+  device_number: int = 1
+  command: int = 0
+  argument: int = 0
   error_code: int = 0
   error_message: str = ''
 
@@ -80,13 +84,17 @@ class Hub:
     _DEFAULT_BIND_ADDRESS = '0.0.0.0'
     _DEFAULT_RX_PORT = 9760
     _DEFAULT_TX_PORT = 9671
+    _DUMMY_MAC_ADDRESS = 'a1:b2:c3:d4:e6:f6'
 
 
-    def __init__(self, controller, bind_address=_DEFAULT_BIND_ADDRESS, rx_port=_DEFAULT_RX_PORT, tx_port=_DEFAULT_TX_PORT):
+    def __init__(self, controller, bind_address=_DEFAULT_BIND_ADDRESS, rx_port=_DEFAULT_RX_PORT, tx_port=_DEFAULT_TX_PORT, mac_address=_DUMMY_MAC_ADDRESS):
       self._controller = controller
       self._bind_address = bind_address
       self._rx_port = rx_port
       self._tx_port = tx_port
+      self._mac_address = mac_address
+
+      self._response_id = 1
 
 
     def start(self):
@@ -103,18 +111,33 @@ class Hub:
               break
 
             response = self._handle_message(data, executor)
-            self._tx_socket.sendto(self._format_response_message(response), (from_host[0], self._tx_port))
+            self._tx_socket.sendto(self._format_simple_response_message(response), (from_host[0], self._tx_port))
+            if response.status == ResponseStatus.OK:
+              self._tx_socket.sendto(self._format_json_response_message(response), (from_host[0], self._tx_port))
+              self._response_id += 1
 
       except OSError:
         self._rx_socket.close()
         self._tx_socket.close()
 
 
-    def _format_response_message(self, response):
-      # TODO add JSON response support
+    def _format_simple_response_message(self, response):
       message = f'{response.transaction_id},{response.status}' 
       if response.status == ResponseStatus.ERROR:
         message += ',{response.error_code},"{response.error_message}"'
+      return message.encode('utf-8')
+
+
+    def _format_json_response_message(self, response):
+      json_command = 'unknown'
+      if response.command == LightCommand.On:
+        json_command = 'on'
+      elif response.command == LightCommand.Off:
+        json_command = 'off'
+      elif response.command == LightCommand.Dim:
+        json_command = 'dim'
+
+      message = f'*!{{"trans":{self._response_id},"mac":"{self._mac_address[9:]}","time":{int(time.time())},"pkt":"433T","fn":"{json_command}","room":{response.room_number} ,"dev":{response.device_number},"param":{response.argument}}}'
       return message.encode('utf-8')
 
     
@@ -140,10 +163,6 @@ class Hub:
         return Response(transaction_id, ResponseStatus.ERROR, 1, 'Malformed message')
       message_offset += 2
 
-      if message[message_offset] == 'F':
-        print(f'Pairing command, ignoring {message}')
-        return Response(transaction_id, ResponseStatus.OK)
-
       if message[message_offset] == 'R' and message[message_offset + 2] == 'D' and message[message_offset + 4] == 'F':
         room_number = int(message[message_offset + 1])
         device_number = int(message[message_offset + 3])
@@ -157,8 +176,13 @@ class Hub:
         command = self._parse_command(function)
         if command is not None:
           executor.submit(self._send, room_number, device_number, command.identitifer, command.argument)
+          return Response(transaction_id, ResponseStatus.OK, room_number, device_number, command.identitifer, command.argument)
 
-      return Response(transaction_id, ResponseStatus.OK)
+      elif message[message_offset] == 'F':
+        print(f'Pairing command, ignoring {message}')
+        return Response(transaction_id, ResponseStatus.OK)
+
+      return Response(transaction_id, ResponseStatus.ERROR, 2, 'Unrecognised command')
 
 
     def _send(self, room_number, device_number, command, argument):
