@@ -128,7 +128,12 @@ class Hub:
       if message[command_offset + 1] == 'R' and message[command_offset + 3] == 'D' and message[command_offset + 5] == 'F':
         room_number = int(message[command_offset + 2])
         device_number = int(message[command_offset + 4])
-        function = int(message[command_offset + 6])
+
+        function = ''
+        function_offset = command_offset + 6
+        while function_offset < len(message) and message[function_offset] != '|':
+          function += message[function_offset]
+          function_offset += 1
 
         command = self._map_command(function)
         if command is not None:
@@ -139,12 +144,16 @@ class Hub:
  
 
     def _map_command(self, function):
-      if function == 0:
+      if function == '0':
         return LightCommand.Off
-      elif function == 1:
+      elif function == '1':
         return LightCommand.On
+      elif function.startswith('dP'):
+        dim_level = int(function[2:])
+        print(f'Dimming command received to level {dim_level}, not yet supported')
+        return None
       else:
-        print(f'Unknown function in message: {message}')
+        print(f'Unknown function in message: {function}')
         return None
 
 
