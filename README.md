@@ -93,4 +93,4 @@ echo '666,!R1D5F0|ignored|ignored' | nc -w 1 -u <address-of-listening-host> 9760
 ## References
 
 * [433Mhz protocol](https://github.com/roberttidey/LightwaveRF/blob/master/LightwaveRF433.pdf)
-* [UDP hub protocol](https://github.com/openremote/Documentation/wiki/LightwaveRF)
+* [Official Lightwave RF docs](https://api.lightwaverf.com/introduction_basic_comms.html)
