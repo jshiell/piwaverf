@@ -109,13 +109,17 @@ class Hub:
     def _handle_message(self, data):
       message = data.decode('utf-8')
 
-      # TODO support MAC prefixes
-
       transaction_id = 0
+      transaction_id_offset = 0
       command_offset = 1
-      if message[0] != ',':
-        transaction_id = int(message[:3])
-        command_offset = 4
+
+      if message[0] == ':': # MAC prefix, ignore at present
+        transaction_id_offset += 8
+        command_offset += 8
+
+      if message[transaction_id_offset] != ',': # A TX ID is present
+        transaction_id = int(message[transaction_id_offset:transaction_id_offset + 3])
+        command_offset += 4
 
       if message[command_offset] == 'F':
         print(f'Pairing command, ignoring {message}')
