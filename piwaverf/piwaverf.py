@@ -2,6 +2,8 @@ import pigpio
 import time
 import yaml
 import socket
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 import lwrf
@@ -94,13 +96,14 @@ class Hub:
       self._tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
       try:
-        while True:
-          data, from_host = self._rx_socket.recvfrom(1024)
-          if not data:
-            break
+        with ThreadPoolExecutor(max_workers=1) as executor:
+          while True:
+            data, from_host = self._rx_socket.recvfrom(1024)
+            if not data:
+              break
 
-          response = self._handle_message(data)
-          self._tx_socket.sendto(self._format_response_message(response), (from_host[0], self._tx_port))
+            response = self._handle_message(data, executor)
+            self._tx_socket.sendto(self._format_response_message(response), (from_host[0], self._tx_port))
 
       except OSError:
         self._rx_socket.close()
@@ -108,13 +111,14 @@ class Hub:
 
 
     def _format_response_message(self, response):
+      # TODO add JSON response support
       message = f'{response.transaction_id},{response.status}' 
       if response.status == ResponseStatus.ERROR:
         message += ',{response.error_code},"{response.error_message}"'
       return message.encode('utf-8')
 
     
-    def _handle_message(self, data):
+    def _handle_message(self, data, executor):
       message = data.decode('utf-8')
 
       transaction_id = ''
@@ -152,10 +156,14 @@ class Hub:
 
         command = self._parse_command(function)
         if command is not None:
-          print(f'Sending command {command.identitifer} with argument {command.argument} to device {device_number} in room {room_number}')
-          self._controller.send(room_number, device_number, command.identitifer, command.argument)
+          executor.submit(self._send, room_number, device_number, command.identitifer, command.argument)
 
       return Response(transaction_id, ResponseStatus.OK)
+
+
+    def _send(self, room_number, device_number, command, argument):
+      print(f'Sending command {command} with argument {argument} to device {device_number} in room {room_number}')
+      self._controller.send(room_number, device_number, command, argument)
  
 
     def _parse_command(self, function):
