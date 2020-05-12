@@ -18,6 +18,18 @@ class Device:
   device_id: int
 
 
+class ResponseStatus:
+  OK = 'OK'
+  ERROR = 'ERR'
+
+@dataclass
+class Response:
+  transaction_id: int
+  status: str
+  error_code: int = 0
+  error_message: str = ''
+
+
 class DeviceMappings:
   """Read device mappings from a LightwaveRF Gem (https://github.com/pauly/lightwaverf) 
      compatible file."""
@@ -56,47 +68,70 @@ class DeviceMappings:
 class Hub:
 
     _DEFAULT_BIND_ADDRESS = '0.0.0.0'
-    _DEFAULT_PORT = 9760
+    _DEFAULT_RX_PORT = 9760
+    _DEFAULT_TX_PORT = 9671
 
 
-    def __init__(self, controller, bind_address=_DEFAULT_BIND_ADDRESS, port=_DEFAULT_PORT):
+    def __init__(self, controller, bind_address=_DEFAULT_BIND_ADDRESS, rx_port=_DEFAULT_RX_PORT, tx_port=_DEFAULT_TX_PORT):
       self._controller = controller
       self._bind_address = bind_address
-      self._port = port
+      self._rx_port = rx_port
+      self._tx_port = tx_port
 
 
     def start(self):
-      self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      self._sock.bind((self._bind_address, self._port))
+      self._rx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self._rx_socket.bind((self._bind_address, self._rx_port))
+
+      self._tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
       try:
         while True:
-          data, _ = self._sock.recvfrom(1024)
+          data, from_host = self._rx_socket.recvfrom(1024)
           if not data:
             break
 
-          self._handle_message(data)
+          response = self._handle_message(data)
+          self._tx_socket.sendto(self._format_response_message(response), (from_host[0], self._tx_port))
 
       except OSError:
-        self._sock.close()
+        self._rx_socket.close()
+        self._tx_socket.close()
+
+
+    def _format_response_message(self, response):
+      message = f'{response.transaction_id},{response.status}' 
+      if response.status == ResponseStatus.ERROR:
+        message += ',{response.error_code},"{response.error_message}"'
+      return message.encode('utf-8')
 
     
     def _handle_message(self, data):
       message = data.decode('utf-8')
 
-      if message[4] == 'F':
-        print(f'Pairing command, ignoring {message}')
-        next
+      # TODO support MAC prefixes
 
-      if message[5] == 'R' and message[7] == 'D' and message[9] == 'F':
-        room_number = int(message[6])
-        device_number = int(message[8])
-        function = int(message[10])
+      transaction_id = 0
+      command_offset = 1
+      if message[0] != ',':
+        transaction_id = int(message[:3])
+        command_offset = 4
+
+      if message[command_offset] == 'F':
+        print(f'Pairing command, ignoring {message}')
+        return Response(transaction_id, ResponseStatus.OK)
+
+      if message[command_offset + 1] == 'R' and message[command_offset + 3] == 'D' and message[command_offset + 5] == 'F':
+        room_number = int(message[command_offset + 2])
+        device_number = int(message[command_offset + 4])
+        function = int(message[command_offset + 6])
 
         command = self._map_command(function)
         if command is not None:
           print(f'Sending command {command} to device {device_number} in room {room_number}')
           self._controller.send(room_number, device_number, command)
+
+      return Response(transaction_id, ResponseStatus.OK)
  
 
     def _map_command(self, function):
@@ -110,7 +145,7 @@ class Hub:
 
 
     def shutdown(self):
-      self._sock.close()
+      self._rx_socket.close()
 
 
 class Controller:
