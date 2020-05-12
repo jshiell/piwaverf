@@ -10,6 +10,7 @@ import lwrf
 class LightCommand:
   On = 1
   Off = 0
+  Dim = 2
 
 
 @dataclass
@@ -22,12 +23,19 @@ class ResponseStatus:
   OK = 'OK'
   ERROR = 'ERR'
 
+
 @dataclass
 class Response:
   transaction_id: int
   status: str
   error_code: int = 0
   error_message: str = ''
+
+
+@dataclass
+class ParsedCommand:
+  identitifer: int
+  argument: int = 0
 
 
 class DeviceMappings:
@@ -135,23 +143,22 @@ class Hub:
           function += message[function_offset]
           function_offset += 1
 
-        command = self._map_command(function)
+        command = self._parse_command(function)
         if command is not None:
-          print(f'Sending command {command} to device {device_number} in room {room_number}')
-          self._controller.send(room_number, device_number, command)
+          print(f'Sending command {command.identitifer} with argument {command.argument} to device {device_number} in room {room_number}')
+          self._controller.send(room_number, device_number, command.identitifer, command.argument)
 
       return Response(transaction_id, ResponseStatus.OK)
  
 
-    def _map_command(self, function):
+    def _parse_command(self, function):
       if function == '0':
-        return LightCommand.Off
+        return ParsedCommand(LightCommand.Off)
       elif function == '1':
-        return LightCommand.On
+        return ParsedCommand(LightCommand.On)
       elif function.startswith('dP'):
         dim_level = int(function[2:])
-        print(f'Dimming command received to level {dim_level}, not yet supported')
-        return None
+        return ParsedCommand(LightCommand.Dim, dim_level)
       else:
         print(f'Unknown function in message: {function}')
         return None
@@ -183,17 +190,29 @@ class Controller:
     time.sleep(2)
 
 
-  def send(self, udp_room_id, udp_device_number, command):
+  def send(self, udp_room_id, udp_device_number, command, command_argument=None):
     if udp_room_id < 1 or udp_room_id > 8:
       raise ValueError(f'UDP Room ID must be between 1 and 8 inclusive, currently {udp_room_id}')
     if udp_device_number < 1 or udp_device_number > 15:
       raise ValueError(f'UDP Device ID must be between 1 and 15 inclusive, currently {udp_device_number}')
 
-    self._tx.put(self._build_message(udp_room_id - 1, udp_device_number - 1, command), self._tx_repeat)
+    radio_command = command
+    radio_command_argument = 0
+
+    if command == LightCommand.Dim:
+      radio_command = 0
+      radio_command_argument = 127 + command_argument
+
+    message = self._build_message(udp_room_id - 1, udp_device_number - 1, radio_command, radio_command_argument)
+    print(f'Sending {message}')
+    self._tx.put(message, self._tx_repeat)
   
 
-  def _build_message(self, room_id, unit_number, command):
-    message = [0, 0, unit_number, command]
+  def _build_message(self, room_id, unit_number, command, argument=0):
+    arg1 = (argument & 0xF0) >> 4
+    arg2 = argument & 0xF
+
+    message = [arg2, arg1, unit_number, command]
 
     for element in self._transmitter_id:
       message.append(int(element, base=16))
