@@ -32,7 +32,7 @@ $(VENV_NAME)/bin/activate: setup.py
 init: venv
 	pip3 install -r requirements.txt
 
-install:
+install: clean-pyc
 	pip3 install -r requirements.txt
 	install -t "$(DESTDIR)$(PREFIX)/$(PROJECT_NAME)/" -D piwaverf/*
 	install -m 644 "piwaverf.service" "/lib/systemd/system/"
