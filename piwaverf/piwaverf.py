@@ -119,7 +119,7 @@ class Hub:
 
 
     def _format_simple_response_message(self, response):
-      message = f'{response.transaction_id},{response.status}' 
+      message = f'{int(response.transaction_id)},{response.status}' 
       if response.status == ResponseStatus.ERROR:
         message += ',{response.error_code},"{response.error_message}"'
       return message.encode('utf-8')
