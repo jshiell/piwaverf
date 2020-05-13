@@ -83,7 +83,7 @@ class Hub:
 
     _DEFAULT_BIND_ADDRESS = '0.0.0.0'
     _DEFAULT_RX_PORT = 9760
-    _DEFAULT_TX_PORT = 9671
+    _DEFAULT_TX_PORT = 9761
     _DUMMY_MAC_ADDRESS = 'a1:b2:c3:d4:e6:f6'
 
 
