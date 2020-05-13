@@ -98,27 +98,24 @@ class Hub:
 
 
     def start(self):
-      self._rx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      self._rx_socket.bind((self._bind_address, self._rx_port))
-
-      self._tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self._socket.bind((self._bind_address, self._rx_port))
 
       try:
         with ThreadPoolExecutor(max_workers=1) as executor:
           while True:
-            data, from_host = self._rx_socket.recvfrom(1024)
+            data, from_host = self._socket.recvfrom(1024)
             if not data:
               break
 
             response = self._handle_message(data, executor)
-            self._tx_socket.sendto(self._format_simple_response_message(response), (from_host[0], self._tx_port))
+            self._socket.sendto(self._format_simple_response_message(response), (from_host[0], self._tx_port))
             if response.status == ResponseStatus.OK:
-              self._tx_socket.sendto(self._format_json_response_message(response), (from_host[0], self._tx_port))
+              self._socket.sendto(self._format_json_response_message(response), (from_host[0], self._tx_port))
               self._response_id += 1
 
       except OSError:
-        self._rx_socket.close()
-        self._tx_socket.close()
+        self._socket.close()
 
 
     def _format_simple_response_message(self, response):
@@ -204,7 +201,7 @@ class Hub:
 
 
     def shutdown(self):
-      self._rx_socket.close()
+      self._socket.close()
 
 
 class Controller:
