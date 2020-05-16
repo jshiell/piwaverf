@@ -1,12 +1,17 @@
 # PiWaveRF
 
-Turning a Raspberry Pi into a first-gen LightwaveRF hub.
+Turning a Raspberry Pi into a LightwaveRF hub.
 
-Currently at a very early stage, but the goal is to allow light control via the same UDP protocol as the Hub, hence allowing it to work with the [Homebridge plugin](https://github.com/rooi/homebridge-lightwaverf).
+This allows the Pi to partially emulate a first-generation [LightwaveRF](https://api.lightwaverf.com/introduction_basic_comms.html) hub. Essentially it takes UDP traffic and turns it into 433Mhz signals to the devices, allowing you to replace the Hub. The major goal with to get it working with [Homebridge](https://homebridge.io) via [the LightwaveRF plugin](https://github.com/rooi/homebridge-lightwaverf).
 
 This is very much in debt to [Robert Tidey's LightwaveRF work](https://github.com/roberttidey/LightwaveRF), and uses his transmission logic.
 
-## Hardware
+## Limitations
+
+* It only supports the dimmable light switches, as that's all I have to use or test with.
+* It doesn't support any over-internet functionality (e.g. the LightwaveRF app or the Alexa integration), as that depends on server-side functionality. However, the use of Homebridge to expose it to Apple's Homekit works around this for my use case.
+
+## Required hardware
 
 * A [433Mhz transmitter module](https://www.amazon.co.uk/gp/product/B07B9KV8D9/)
 * 3 x [Female-to-female jumper cables](https://www.amazon.co.uk/gp/product/B01EV70C78/)
@@ -27,6 +32,11 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
 ## Prerequisies
 
 * [Rasbpian](https://www.raspberrypi.org/downloads/) 10.3 (in this case, shouldn't be particularly tied to it)
+* Python 3
+  
+  ```bash
+  sudo apt install python3
+  ```
 * [Pigpio](http://abyz.me.uk/rpi/pigpio/):
 
    ```bash
@@ -35,9 +45,7 @@ It's also worth adding on an antenna to the board - 170mm of wire should be abou
    sudo systemctl start pigpiod
    ```
 
-## Usage
-
-Only basic functions are supported at present (lights on/off).
+## Configuration
 
 Firstly, you'll need to set up your device mappings. This maps from the names used by the UDP protocol to the IDs used by the radio protocol. To do this we use a YAML file in a subset of the format used by Paul Clarke's popular [LightwaveRF Gem](https://github.com/pauly/lightwaverf).
 
@@ -60,7 +68,6 @@ You can have up to 8 rooms, and up to 15 devices per room. The protocol allows f
 
 ```bash
 pip install -r requirements.txt
-
 pywaverf/main.py --help # show usage info
 ```
 
@@ -88,6 +95,15 @@ You can then send test messages with the [LightwaveRF Gem](https://github.com/pa
 ```bash
 echo '666,!R1D5F1|ignored|ignored' | nc -w 1 -u <address-of-listening-host> 9760 # turn room 1 device 5 on
 echo '666,!R1D5F0|ignored|ignored' | nc -w 1 -u <address-of-listening-host> 9760 # turn room 1 device 5 off
+```
+
+## Daemon installation
+
+Once you have the pairing and the mappings file in place, you can install the listening daemon via the Makefile. This will run it via Systemd, and will install the required Python packages to your system environment.
+
+```bash
+sudo make install
+sudo systemctl start piwaverf
 ```
 
 ## References
