@@ -242,6 +242,9 @@ class Controller:
         radio_command = 1
         radio_command_argument = 127 + command_argument
 
+    if radio_command == 0:
+      radio_command_argument = 64
+
     message = self._build_message(udp_room_id - 1, udp_device_number - 1, radio_command, radio_command_argument)
     self._tx.put(message, self._tx_repeat)
   
